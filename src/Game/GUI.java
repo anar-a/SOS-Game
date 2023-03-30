@@ -1,11 +1,19 @@
 package Game;
 
+import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.beans.PropertyChangeListener;
 
+import javax.print.attribute.IntegerSyntax;
 import javax.swing.Action;
+import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.GroupLayout;
@@ -17,6 +25,7 @@ import javax.swing.JRadioButton;
 import javax.swing.JSpinner;
 import javax.swing.SpinnerModel;
 import javax.swing.SpinnerNumberModel;
+import javax.swing.SwingConstants;
 import javax.swing.event.ChangeListener;
 
 import Game.Board.GameMode;
@@ -29,54 +38,96 @@ public class GUI extends JFrame {
 	private JLabel gameTitle;
 	private JRadioButton simpleGame;
 	private JRadioButton generalGame;
+	
+	private JButton startButton;
+	
 	private JLabel boardSizeLabel;
 	private JSpinner boardSizeSpinner;
+
+	private JPanel boardPanel;
 	
-	private JLabel blueSection;
-	private JRadioButton blueSChoice;
-	private JRadioButton blueOChoice;
+	private JPanel player0Menu;
+	private JPanel player1Menu;
 	
-	private JLabel redSection;
-	private JRadioButton redSChoice;
-	private JRadioButton redOChoice;
+	private JLabel player0Label;
+	private JLabel player1Label;
 	
-	private JButton[][] cellButtons;
+	private JLabel[][] cellLabels;
 	
 	private Board gameBoard;
 	
 	private static final int BOARD_PIXEL_SIZE = 400;
-
-	
-	public class Coordinate{
-		public int X;
-		public int Y;
-		Coordinate(int x, int y){
-			this.X = x;
-			this.Y = y;
-		}
-	}
+	private static final int GRID_GAP = 2;
 				
 	public GUI() {
 		mainPanel = new JPanel();
-		//mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
 		mainPanel.setLayout(null);
 		
 		JPanel titlePanel = createTitleRow();
 		mainPanel.add(titlePanel);
 		
-		gameBoard = new Board(8, Board.GameMode.SIMPLE);
-		
-		JPanel boardPanel = boardGridSetup(gameBoard);
-		mainPanel.add(boardPanel);
-		
-		JPanel moveType = moveTypeSetup();
-		mainPanel.add(moveType);
-
+		startButton = createStartButton();
+		this.add(startButton);
 		
 		this.add(mainPanel);
 		this.setSize(800,500);
 		this.setVisible(true);
 	
+	}
+	
+	public JButton createStartButton() {
+		JButton startButton = new JButton("Start Game");
+		startButton.setBounds(300, 200, 200, 50);
+		
+		// vanity
+		startButton.setFocusPainted(false);
+		startButton.setContentAreaFilled(false);
+		
+		startButton.addActionListener(new startButtonAction());
+		
+		
+		return startButton;
+	}
+	
+	private class startButtonAction implements ActionListener{
+		@Override
+		public void actionPerformed(ActionEvent e) {			
+			try {
+				boardSizeSpinner.commitEdit();
+				int boardSize = (int) boardSizeSpinner.getValue();
+				
+				Board.GameMode selectedMode;
+				
+				if (simpleGame.isSelected()) {
+					selectedMode = Board.GameMode.SIMPLE;
+				}
+				else {
+					selectedMode = Board.GameMode.GENERAL;
+				}
+				
+				gameBoard = new Board(boardSize, selectedMode);
+				
+				boardPanel = boardGridSetup();
+				mainPanel.add(boardPanel);
+				
+				player0Menu = moveTypeSetup("Blue", 0);
+				player0Menu.setLocation(50,100);
+				mainPanel.add(player0Menu);
+				
+				player1Menu = moveTypeSetup("Red", 1);
+				player1Menu.setLocation(675,100);
+				mainPanel.add(player1Menu);
+				
+				redrawTurn();
+				
+				startButton.setVisible(false);
+				
+			}
+			catch (java.text.ParseException err) {
+				System.out.print(err);
+			}
+		}
+		
 	}
 	
 	public JPanel createTitleRow() {
@@ -109,107 +160,146 @@ public class GUI extends JFrame {
 		
 		boardSizeLabel = new JLabel("Board Size");
 		
-		SpinnerModel values = new SpinnerNumberModel(8, // default
+		SpinnerModel values = new SpinnerNumberModel(9, // default
 				Board.MINIMUM_BOARD_SIZE, // min
 				Board.MAXIMUM_BOARD_SIZE, // max
 				1); // step
 		
-		JSpinner spinner = new JSpinner(values);
+		boardSizeSpinner = new JSpinner(values);
 		
 		pane.add(boardSizeLabel);
-		pane.add(spinner);
+		pane.add(boardSizeSpinner);
 		return pane;
 	}
 	
-	private JPanel boardGridSetup(Board gameBoard) {
+	private JPanel boardGridSetup() {
 		int boardSize = gameBoard.getBoardSize();
-		cellButtons = new JButton[boardSize][boardSize];
+		cellLabels = new JLabel[boardSize][boardSize];
 		
 		JPanel boardPanel = new JPanel();
-		boardPanel.setLayout(new GridLayout(boardSize, boardSize));
+		GridLayout layout = new GridLayout(boardSize, boardSize);
+		layout.setHgap(GRID_GAP);
+		layout.setVgap(GRID_GAP);
+		
+		boardPanel.setLayout(layout);
 		boardPanel.setSize(BOARD_PIXEL_SIZE,BOARD_PIXEL_SIZE);
 		boardPanel.setBounds(800/2 - BOARD_PIXEL_SIZE/2, 50, BOARD_PIXEL_SIZE, BOARD_PIXEL_SIZE);
 		
 		for (int i = 0; i < boardSize; i++) {
 			for (int j = 0; j < boardSize; j++) {
-				JButton cell = new JButton();
+				JLabel cell = new JLabel("", SwingConstants.CENTER);
 				
-				cell.setFocusPainted(false);
-				cell.setContentAreaFilled(false);
+				cell.setFont(new Font("Arial", Font.PLAIN, (int) (BOARD_PIXEL_SIZE / boardSize / 1.5)));
+				cell.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY, 1));
 				
-				cell.addActionListener(new CellClickAction());
-				cell.setActionCommand(Integer.toString(i) + "," + Integer.toString(j));
-				
-				cellButtons[i][j] = cell;
+				cellLabels[i][j] = cell;
 				
 				boardPanel.add(cell);
 			}
 		}
 		
+		boardPanel.addMouseListener(new boardClick());
+		
 		return boardPanel;
 	}
+
+	public class boardClick extends MouseAdapter {
+		public void mouseClicked(MouseEvent e) {
+			int row = e.getY() / (BOARD_PIXEL_SIZE / gameBoard.getBoardSize());
+			int column = e.getX() / (BOARD_PIXEL_SIZE / gameBoard.getBoardSize());
+			
+			gameBoard.makeMove(row, column);
+			redrawBoard();
+			redrawTurn();
+		}
+	}
 	
-	private JPanel moveTypeSetup() {
+	public void redrawBoard() {
+		int boardSize = gameBoard.getBoardSize();
+				
+		System.out.println(gameBoard.getTurn());
+		for (int i = 0; i < boardSize; i++) {
+			for (int j = 0; j < boardSize; j++) {
+				Board.Cell currentCell = gameBoard.getCell(i, j);
+				if (currentCell == Board.Cell.S) {
+					cellLabels[i][j].setText("S");
+				}
+				else if (currentCell == Board.Cell.O) {
+					cellLabels[i][j].setText("O");
+				}
+			}
+		}
+	}
+	
+	public void redrawTurn() {
+		int turn = gameBoard.getTurn();
+		
+		JLabel player0Label = (JLabel) player0Menu.getComponents()[0];
+		JLabel player1Label = (JLabel) player1Menu.getComponents()[0];
+		
+		if (turn == 0) {
+			player0Label.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
+			player1Label.setBorder(BorderFactory.createLineBorder(Color.BLACK, 0));
+		}
+		else if (turn == 1) {
+			player0Label.setBorder(BorderFactory.createLineBorder(Color.BLACK, 0));
+			player1Label.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
+		}
+	}
+	
+	private JPanel moveTypeSetup(String playerColor, int playerNum) {
 		JPanel panel = new JPanel();
-		panel.setBounds(20, 100, 100, 200);
+		panel.setSize(100,200);
 		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 		
-		blueSection = new JLabel("Player");
-		blueSChoice = new JRadioButton("S");
-		blueOChoice = new JRadioButton("O");
+		String playerNumString = Integer.toString(playerNum);
 		
-		blueSChoice.setSelected(true);
+		JLabel section = new JLabel("Player " + playerColor);
+		JRadioButton sChoice = new JRadioButton("S");
+		JRadioButton oChoice = new JRadioButton("O");
 		
-		blueSChoice.setActionCommand("S");
-		blueSChoice.addActionListener(new PieceChoiceAction());
+		sChoice.setSelected(true);
 		
-		blueOChoice.setActionCommand("O");
-		blueOChoice.addActionListener(new PieceChoiceAction());
+		sChoice.setActionCommand(playerNumString + "S");
+		sChoice.addActionListener(new pieceChoiceAction());
+		
+		oChoice.setActionCommand(playerNumString + "O");
+		oChoice.addActionListener(new pieceChoiceAction());
 		
 		ButtonGroup group = new ButtonGroup();
-		group.add(blueSChoice);
-		group.add(blueOChoice);
+		group.add(sChoice);
+		group.add(oChoice);
 		
-		panel.add(blueSection);
-		panel.add(blueSChoice);
-		panel.add(blueOChoice);
+		panel.add(section);
+		panel.add(sChoice);
+		panel.add(oChoice);
 		
 		return panel;
 	}
 	
-	public Coordinate cellStringToPair(String cellString){
-		String[] split = cellString.split(",");
-		return new Coordinate(Integer.parseInt(split[0]), Integer.parseInt(split[1]));
-	}
-	
-	public class CellClickAction implements ActionListener{
+	private class pieceChoiceAction implements ActionListener{
 		@Override
 		public void actionPerformed(ActionEvent e) {
-			Coordinate cellXY = cellStringToPair(e.getActionCommand());
+			String actionCommand = e.getActionCommand();
+			int playerNum = Integer.parseInt(String.valueOf(actionCommand.charAt(0)));
+			char pieceChoiceChar = actionCommand.charAt(1);
 			
-			JButton clickedButton = cellButtons[cellXY.X][cellXY.Y];
-			clickedButton.setText(
-					gameBoard.getBlueActivePiece() == Piece.S
-					? "S"
-					: "O");
-		}
-	}
-	
-	public class PieceChoiceAction implements ActionListener{
-		@Override
-		public void actionPerformed(ActionEvent e) {
-			gameBoard.setBlueActivePiece(
-					e.getActionCommand() == "S"
-					? Piece.S
-					: Piece.O);
+			Player.Piece pieceChoice;
+			
+			if (pieceChoiceChar == 'S') {
+				pieceChoice = Player.Piece.S;
+			}
+			else {
+				pieceChoice = Player.Piece.O;
+			}
+			
+			gameBoard.setPlayerPiece(playerNum, pieceChoice);
 		}
 		
 	}
 	
 	public static void main(String[] args) {
-		System.out.println("GUI Class");
-		//Board board = new Board(8, GameMode.SIMPLE);
-		
+		System.out.println("GUI Class");		
 		GUI gameGui = new GUI();
 	}
 }

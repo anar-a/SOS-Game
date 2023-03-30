@@ -1,7 +1,5 @@
 package Game;
 
-import Game.Board.Piece;
-
 public class Player {
 	public static enum Piece{
 		S,

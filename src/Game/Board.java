@@ -1,6 +1,5 @@
 package Game;
 
-import java.util.Arrays;
 
 public class Board {
 	public static final int MINIMUM_BOARD_SIZE = 3;
@@ -32,7 +31,7 @@ public class Board {
 	public Board(int boardSizeGiven, GameMode mode) {
 		setBoardSize(boardSizeGiven);
 		setGameMode(mode);
-		
+				
 		boardCells = new Cell[boardSize][boardSize]; // limit checked in setBoardSize()
 		setAllCellsEmpty();
 		populatePlayerArray();
@@ -48,6 +47,24 @@ public class Board {
 	
 	public GameMode getGameMode() {
 		return currentGameMode;
+	}
+	
+	public Cell getCell(int row, int column) {
+		if (isInBounds(row, column)) {
+			return boardCells[row][column];
+		}
+		else {
+			return null;
+		}
+	}
+	
+	public boolean isInBounds(int row, int column) {
+		if (row < 0 || row > boardSize-1 || column < 0 || column > boardSize-1) {
+			return false;
+		}
+		else {
+			return true;
+		}
 	}
 	
 	private void setBoardSize(int size) {
@@ -101,13 +118,23 @@ public class Board {
 	}
 	
 	private void toggleTurn() {
-		turn = (turn == 0) ? 1 : 0;
+		if (turn == 0) {
+			turn = 1;
+		}
+		else {
+			turn = 0;
+		}
 	}
 	
 	public int getTurn() {
 		return turn;
 	}
 	
+	public void setPlayerPiece(int playerNum, Player.Piece pieceChoice) {
+		players[playerNum].setActivePiece(pieceChoice);
+	}
+	
+	// for testing
 	public void printBoard() {
 		for (int i = 0; i < boardSize; i++) {
 			for (int j = 0; j < boardSize; j++) {
@@ -128,13 +155,4 @@ public class Board {
 		System.out.println();
 	}
 	
-	// for testing
-	public static void main(String[] args) {
-		Board b = new Board(8, GameMode.SIMPLE);
-		b.printBoard();
-		b.makeMove(5,  5);
-		b.makeMove(5, 7);
-		b.makeMove(0, 1);
-		b.printBoard();
-	}
 }
