@@ -1,15 +1,20 @@
 package Game;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.geom.Line2D;
 import java.beans.PropertyChangeListener;
+import java.util.LinkedList;
 
 import javax.print.attribute.IntegerSyntax;
 import javax.swing.Action;
@@ -29,7 +34,7 @@ import javax.swing.SwingConstants;
 import javax.swing.event.ChangeListener;
 
 import Game.Board.GameMode;
-import Game.Board.Piece;
+import Game.Board.SPair;
 
 
 public class GUI extends JFrame {
@@ -46,15 +51,15 @@ public class GUI extends JFrame {
 
 	private JPanel boardPanel;
 	
-	private JPanel player0Menu;
-	private JPanel player1Menu;
-	
-	private JLabel player0Label;
-	private JLabel player1Label;
+	private JPanel[] playerMenus;
 	
 	private JLabel[][] cellLabels;
 	
 	private Board gameBoard;
+	
+	private JButton newGameB;
+	
+	private JPanel gameContainer;
 	
 	private static final int BOARD_PIXEL_SIZE = 400;
 	private static final int GRID_GAP = 2;
@@ -89,37 +94,52 @@ public class GUI extends JFrame {
 		return startButton;
 	}
 	
+	private void initiateGame() {
+		int boardSize = (int) boardSizeSpinner.getValue();
+		
+		GameMode selectedMode;
+		
+		if (simpleGame.isSelected()) {
+			selectedMode = GameMode.SIMPLE;
+		}
+		else {
+			selectedMode = GameMode.GENERAL;
+		}
+		
+		gameBoard = new Board(boardSize, selectedMode);
+		
+		gameContainer = new JPanel();
+		
+		boardPanel = boardGridSetup();
+		gameContainer.add(boardPanel);
+		playerMenus = new JPanel[gameBoard.getNumPlayers()];
+		
+		for (int i = 0; i < gameBoard.getNumPlayers(); i++) {
+			playerMenus[i] = moveTypeSetup(i);
+			gameContainer.add(playerMenus[i]);
+		}
+		
+		playerMenus[0].setLocation(50,100);
+		playerMenus[1].setLocation(675,100);
+		
+		newGameB = setupNewGameButton();
+		newGameB.setBounds(620, 400, 150, 25);
+		gameContainer.add(newGameB);
+		
+		gameContainer.setLayout(null);
+		gameContainer.setBounds(mainPanel.getBounds());
+		mainPanel.add(gameContainer);
+		
+		redrawTurn();
+		mainPanel.repaint();
+	}
+	
 	private class startButtonAction implements ActionListener{
 		@Override
 		public void actionPerformed(ActionEvent e) {			
 			try {
 				boardSizeSpinner.commitEdit();
-				int boardSize = (int) boardSizeSpinner.getValue();
-				
-				Board.GameMode selectedMode;
-				
-				if (simpleGame.isSelected()) {
-					selectedMode = Board.GameMode.SIMPLE;
-				}
-				else {
-					selectedMode = Board.GameMode.GENERAL;
-				}
-				
-				gameBoard = new Board(boardSize, selectedMode);
-				
-				boardPanel = boardGridSetup();
-				mainPanel.add(boardPanel);
-				
-				player0Menu = moveTypeSetup("Blue", 0);
-				player0Menu.setLocation(50,100);
-				mainPanel.add(player0Menu);
-				
-				player1Menu = moveTypeSetup("Red", 1);
-				player1Menu.setLocation(675,100);
-				mainPanel.add(player1Menu);
-				
-				redrawTurn();
-				
+				initiateGame();
 				startButton.setVisible(false);
 				
 			}
@@ -172,11 +192,39 @@ public class GUI extends JFrame {
 		return pane;
 	}
 	
+	private class BoardPanel extends JPanel{
+		@Override
+		public void paint(Graphics g) {
+			super.paint(g);
+		    Graphics2D g2 = (Graphics2D) g;
+		    g2.setStroke(new BasicStroke(10));
+
+			float boardSize = gameBoard.getBoardSize();
+			LinkedList<SPair> scoredSPairs = gameBoard.getScoredSPairs();
+			
+			float increment = BOARD_PIXEL_SIZE / boardSize;
+			
+			g2.setStroke(new BasicStroke(3));
+			
+			for (SPair pair : scoredSPairs) {
+				Line2D line = new Line2D.Float(pair.pointA.column * increment + increment/2, 
+						pair.pointA.row * increment + increment/2,
+						pair.pointB.column * increment + increment/2, 
+						pair.pointB.row * increment + increment/2);
+				
+				g2.setColor(pair.owner.getColor());
+				g2.draw(line);
+			}
+
+		}
+	
+	}
+	
 	private JPanel boardGridSetup() {
 		int boardSize = gameBoard.getBoardSize();
 		cellLabels = new JLabel[boardSize][boardSize];
 		
-		JPanel boardPanel = new JPanel();
+		BoardPanel boardPanel = new BoardPanel();
 		GridLayout layout = new GridLayout(boardSize, boardSize);
 		layout.setHgap(GRID_GAP);
 		layout.setVgap(GRID_GAP);
@@ -203,6 +251,12 @@ public class GUI extends JFrame {
 		return boardPanel;
 	}
 
+	private void displayWinnerPanel() {
+		JPanel winnerPanel = winnerPanelSetup();
+		gameContainer.add(winnerPanel);
+		winnerPanel.setBounds(600, 350, 200, 50);
+	}
+	
 	public class boardClick extends MouseAdapter {
 		public void mouseClicked(MouseEvent e) {
 			int row = e.getY() / (BOARD_PIXEL_SIZE / gameBoard.getBoardSize());
@@ -211,13 +265,16 @@ public class GUI extends JFrame {
 			gameBoard.makeMove(row, column);
 			redrawBoard();
 			redrawTurn();
+			
+			if (gameBoard.isGameOver()) {
+				displayWinnerPanel();
+			}
 		}
 	}
 	
 	public void redrawBoard() {
 		int boardSize = gameBoard.getBoardSize();
 				
-		System.out.println(gameBoard.getTurn());
 		for (int i = 0; i < boardSize; i++) {
 			for (int j = 0; j < boardSize; j++) {
 				Board.Cell currentCell = gameBoard.getCell(i, j);
@@ -229,32 +286,34 @@ public class GUI extends JFrame {
 				}
 			}
 		}
+		
+		boardPanel.repaint();
+		
 	}
 	
-	public void redrawTurn() {
+	private void redrawTurn() {
 		int turn = gameBoard.getTurn();
-		
-		JLabel player0Label = (JLabel) player0Menu.getComponents()[0];
-		JLabel player1Label = (JLabel) player1Menu.getComponents()[0];
-		
-		if (turn == 0) {
-			player0Label.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
-			player1Label.setBorder(BorderFactory.createLineBorder(Color.BLACK, 0));
-		}
-		else if (turn == 1) {
-			player0Label.setBorder(BorderFactory.createLineBorder(Color.BLACK, 0));
-			player1Label.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
+
+		for (int i = 0; i < playerMenus.length; i++) {
+			JLabel playerLabel = (JLabel) playerMenus[i].getComponents()[0];
+			
+			if (i == turn) {
+				playerLabel.setBorder(BorderFactory.createLineBorder(Color.BLACK, 2));
+			}
+			else {
+				playerLabel.setBorder(BorderFactory.createLineBorder(Color.BLACK, 0));
+			}
 		}
 	}
 	
-	private JPanel moveTypeSetup(String playerColor, int playerNum) {
+	private JPanel moveTypeSetup(int playerNum) {
 		JPanel panel = new JPanel();
 		panel.setSize(100,200);
 		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 		
 		String playerNumString = Integer.toString(playerNum);
 		
-		JLabel section = new JLabel("Player " + playerColor);
+		JLabel section = new JLabel("Player " + gameBoard.getPlayer(playerNum).getName());
 		JRadioButton sChoice = new JRadioButton("S");
 		JRadioButton oChoice = new JRadioButton("O");
 		
@@ -274,6 +333,24 @@ public class GUI extends JFrame {
 		panel.add(sChoice);
 		panel.add(oChoice);
 		
+		return panel;
+	}
+	
+	private JPanel winnerPanelSetup() {
+		JPanel panel = new JPanel();
+		JLabel winnerLabel = new JLabel("");
+		Player winner = gameBoard.getWinner();
+		
+		if (winner == null) {
+			winnerLabel.setText("Game Draw");
+		}
+		else {
+			winnerLabel.setText("Winner: " + winner.getName());
+		}
+		
+		winnerLabel.setFont(new Font("Arial", Font.PLAIN, 16));
+		
+		panel.add(winnerLabel);
 		return panel;
 	}
 	
@@ -298,8 +375,29 @@ public class GUI extends JFrame {
 		
 	}
 	
+	private JButton setupNewGameButton() {
+		JButton button = new JButton("New Game");
+		
+		// vanity
+		button.setFocusPainted(false);
+		button.setContentAreaFilled(false);
+		
+		button.addActionListener(new onNewGameAction());
+		
+		return button;
+	}
+	
+	private class onNewGameAction implements ActionListener {
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			mainPanel.remove(gameContainer);
+			initiateGame();
+			mainPanel.repaint();
+		}
+		
+	}
+	
 	public static void main(String[] args) {
-		System.out.println("GUI Class");		
-		GUI gameGui = new GUI();
+		new GUI();
 	}
 }
