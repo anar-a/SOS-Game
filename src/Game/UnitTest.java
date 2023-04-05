@@ -8,10 +8,12 @@ import Game.Board.Cell;
 import Game.Player.Piece;
 
 class UnitTest {
+	int validBoardSize = (Board.MAXIMUM_BOARD_SIZE + Board.MINIMUM_BOARD_SIZE)/2;
+	
 	@Test
 	public void testBoardSizeSetup() {
-		Board board = new Board(8, Board.GameMode.SIMPLE);
-		assertEquals(board.getBoardSize(), 8);
+		Board board = new Board(validBoardSize, Board.GameMode.SIMPLE);
+		assertEquals(board.getBoardSize(), validBoardSize);
 	}
 	
 	@Test
@@ -66,31 +68,79 @@ class UnitTest {
 	
 	@Test
 	public void testValidSimpleGameMove() {
-		int boardSize = (Board.MAXIMUM_BOARD_SIZE + Board.MINIMUM_BOARD_SIZE)/2;
-		Board board = new Board(boardSize, Board.GameMode.SIMPLE);
+		Board board = new Board(validBoardSize, Board.GameMode.SIMPLE);
 		assertEquals(board.makeMove(0, 0), true);
 	}
 	
 	@Test
 	public void testOutOfBoundsSimpleGameMove() {
-		int boardSize = (Board.MAXIMUM_BOARD_SIZE + Board.MINIMUM_BOARD_SIZE)/2;
-		Board board = new Board(boardSize, Board.GameMode.SIMPLE);
+		Board board = new Board(validBoardSize, Board.GameMode.SIMPLE);
 		assertEquals(board.makeMove(Board.MAXIMUM_BOARD_SIZE + 1, 0), false);
 	}
 	
 	@Test
+	public void testSimpleGameOccupiedMove() {
+		Board board = new Board(validBoardSize, Board.GameMode.SIMPLE);
+		
+		board.makeMove(0, 0);
+		assertEquals(board.makeMove(0,0), false);
+	}
+	
+	@Test
+	public void testSimpleGameTurnToggle() {
+		Board board = new Board(validBoardSize, Board.GameMode.SIMPLE);
+		
+		int prevTurn = board.getTurn();
+		board.makeMove(0,0);
+		
+		assertEquals((board.getTurn() == prevTurn), false);
+	}
+	
+	
+	@Test
 	public void testValidGeneralGameMove() {
-		int boardSize = (Board.MAXIMUM_BOARD_SIZE + Board.MINIMUM_BOARD_SIZE)/2;
-		Board board = new Board(boardSize, Board.GameMode.GENERAL);
+		Board board = new Board(validBoardSize, Board.GameMode.GENERAL);
 		assertEquals(board.makeMove(0, 0), true);
 	}
 	
 	@Test
 	public void testOutOfBoundsGeneralGameMove() {
-		int boardSize = (Board.MAXIMUM_BOARD_SIZE + Board.MINIMUM_BOARD_SIZE)/2;
-		Board board = new Board(boardSize, Board.GameMode.GENERAL);
+		Board board = new Board(validBoardSize, Board.GameMode.GENERAL);
 		assertEquals(board.makeMove(Board.MAXIMUM_BOARD_SIZE + 1, 0), false);
 	}
+	
+	@Test
+	public void testGeneralGameOccupiedMove() {
+		Board board = new Board(validBoardSize, Board.GameMode.GENERAL);
+		
+		board.makeMove(0, 0);
+		assertEquals(board.makeMove(0,0), false);
+	}
+	
+	@Test
+	public void testGeneralGameTurnToggle() {
+		Board board = new Board(validBoardSize, Board.GameMode.GENERAL);
+		
+		int prevTurn = board.getTurn();
+		board.makeMove(0,0);
+		
+		assertEquals((board.getTurn() == prevTurn), false);
+	}
+	
+	@Test
+	public void testGeneralGameDoubleTurn() {
+		Board board = new Board(validBoardSize, Board.GameMode.GENERAL);
+	
+		board.makeMove(0, 0);
+		
+		board.getPlayer(1).setActivePiece(Piece.O);
+		board.makeMove(1, 1);
+		
+		board.makeMove(2, 2);
+		
+		assertEquals(board.getTurn(), 0);
+	}
+	
 	
 	@Test
 	public void testSimpleGameOverWin() {

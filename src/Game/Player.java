@@ -12,7 +12,7 @@ public class Player {
 	private Piece activePiece = Piece.S;
 	
 	private int score = 0;
-	private String name;
+	private String name = "Black";
 	
 	public void setActivePiece(Piece piece) {
 		activePiece = piece;
