@@ -147,6 +147,7 @@ public class GUI extends JFrame {
 			selectedMode = GameMode.GENERAL;
 		}
 		
+		
 		gameBoard = new Board(boardSize, selectedMode) {
 			@Override
 			public void onMoveEvent() {

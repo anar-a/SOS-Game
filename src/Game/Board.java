@@ -31,7 +31,7 @@ public class Board {
 	private Color[] playerColors = {new Color(50, 100, 255), new Color(255, 100, 50)};
 	
 	private Thread t1;
-	public static final int COMPUTER_MOVE_DELAY = 1000;
+	public int computerMoveDelay = 1000;
 	
 	public enum GameMode {
 		SIMPLE,
@@ -317,7 +317,7 @@ public class Board {
 						@Override
 						public void run() {
 							try {
-								Thread.sleep(COMPUTER_MOVE_DELAY);
+								Thread.sleep(computerMoveDelay);
 								t1 = null;
 								promptComputerMove();
 							}
@@ -528,6 +528,12 @@ public class Board {
 		player.setComputerPlayer(isComputer);
 		if (player == players[turn] && players[turn].isComputer()) {
 			promptComputerMove();
+		}
+	}
+	
+	public void setComputerMoveDelay(int delayInMilliseconds) {
+		if (delayInMilliseconds >= 0) {
+			computerMoveDelay = delayInMilliseconds;
 		}
 	}
 	

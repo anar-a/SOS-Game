@@ -229,4 +229,64 @@ class UnitTest {
 		
 		assertEquals(true, oneCellOccupied);
 	}
+	
+	@Test
+	public void testComputerMoveResponse() {
+		Board board = new Board(validBoardSize, Board.GameMode.GENERAL);
+		
+		board.makeMove(0, 0);
+		board.setPlayerComputerStatus(board.getPlayer(1), true);
+		
+		int occupiedCells = 0;
+		for (int i = 0; i < board.getBoardSize(); i++) {
+			for (int j = 0; j < board.getBoardSize(); j++) {
+				if (board.getCell(i, j) != Cell.EMPTY) {
+					occupiedCells++;
+				}
+			}
+		}
+		
+		assertEquals(2, occupiedCells);
+	}
+	
+	@Test
+	public void testAllComputerPlayersValidGame() {		
+		Board board = new Board(validBoardSize, Board.GameMode.GENERAL) {
+			private int occupiedCells = 0;
+			
+			@Override
+			public void onMoveEvent() {
+				occupiedCells++;
+				if (this.isGameOver()) {
+					assertEquals(true, this.isGameOver());
+					assertEquals(validBoardSize * validBoardSize, occupiedCells);
+				}
+			}
+		};
+		board.setComputerMoveDelay(0);
+		
+		board.setPlayerComputerStatus(board.getPlayer(0), true);
+		board.setPlayerComputerStatus(board.getPlayer(1), true);
+
+	}
+	
+	@Test
+	public void testSwitchPlayerType() {
+		Board board = new Board(validBoardSize, Board.GameMode.SIMPLE);
+		
+		assertEquals(false, board.getPlayer(0).isComputer());
+		assertEquals(false, board.getPlayer(1).isComputer());
+
+		
+		board.setPlayerComputerStatus(board.getPlayer(0), true);
+		board.setPlayerComputerStatus(board.getPlayer(1), true);
+		assertEquals(true, board.getPlayer(0).isComputer());
+		assertEquals(true, board.getPlayer(1).isComputer());
+		
+		board.setPlayerComputerStatus(board.getPlayer(0), false);
+		board.setPlayerComputerStatus(board.getPlayer(1), false);
+		assertEquals(false, board.getPlayer(0).isComputer());
+		assertEquals(false, board.getPlayer(1).isComputer());
+
+	}
 }
