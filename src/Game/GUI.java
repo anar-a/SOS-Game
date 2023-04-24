@@ -8,6 +8,7 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GridLayout;
+import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
@@ -19,6 +20,7 @@ import java.util.LinkedList;
 import javax.print.attribute.IntegerSyntax;
 import javax.swing.Action;
 import javax.swing.BorderFactory;
+import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.GroupLayout;
@@ -27,6 +29,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
+import javax.swing.JSeparator;
 import javax.swing.JSpinner;
 import javax.swing.SpinnerModel;
 import javax.swing.SpinnerNumberModel;
@@ -35,6 +38,7 @@ import javax.swing.event.ChangeListener;
 
 import Game.Board.GameMode;
 import Game.Board.SPair;
+import Game.Player.Piece;
 
 
 public class GUI extends JFrame {
@@ -60,25 +64,62 @@ public class GUI extends JFrame {
 	private JButton newGameB;
 	
 	private JPanel gameContainer;
+	private JPanel winnerPanel;
+	
 	
 	private static final int BOARD_PIXEL_SIZE = 400;
+	private static final Dimension MAIN_PANEL_SIZE = new Dimension(800, 500);
 	private static final int GRID_GAP = 2;
+	private static final Point[] PLAYER_MENU_LOCATIONS = new Point[] {
+			new Point(50, 100),
+			new Point(650, 100)};
+	
 				
 	public GUI() {
 		mainPanel = new JPanel();
 		mainPanel.setLayout(null);
 		
+		//preGameContainer = preGameSetup();
+		//mainPanel.add(preGameContainer);
 		JPanel titlePanel = createTitleRow();
-		mainPanel.add(titlePanel);
-		
 		startButton = createStartButton();
-		this.add(startButton);
+		
+		mainPanel.add(titlePanel);
+		mainPanel.add(startButton);
 		
 		this.add(mainPanel);
-		this.setSize(800,500);
+		this.setSize(MAIN_PANEL_SIZE);
 		this.setVisible(true);
 	
 	}
+	
+	public JPanel preGameSetup() {
+		JPanel preGameContainer = new JPanel();
+		preGameContainer.setLayout(null);
+		
+		JPanel titlePanel = createTitleRow();
+		startButton = createStartButton();
+
+		preGameContainer.add(titlePanel);
+		preGameContainer.add(startButton);
+		
+		preGameContainer.setSize(MAIN_PANEL_SIZE);
+		
+		return preGameContainer;
+	}
+	
+//	public JPanel playerTypeSectionsSetup(int numPlayers) {
+//		playerTypeSections = new JPanel();
+//		playerTypeSections.setLayout(null);
+//		playerTypeSections.setSize(MAIN_PANEL_SIZE);
+//		
+//		for (int i = 0; i < numPlayers; i++) {
+//			JPanel playerPanel = playerTypeSetup(i);
+//			playerTypeSections.add(playerPanel);
+//		}
+//		
+//		return playerTypeSections;
+//	}
 	
 	public JButton createStartButton() {
 		JButton startButton = new JButton("Start Game");
@@ -106,7 +147,12 @@ public class GUI extends JFrame {
 			selectedMode = GameMode.GENERAL;
 		}
 		
-		gameBoard = new Board(boardSize, selectedMode);
+		gameBoard = new Board(boardSize, selectedMode) {
+			@Override
+			public void onMoveEvent() {
+				afterMoveEvent();
+			}
+		};
 		
 		gameContainer = new JPanel();
 		
@@ -117,10 +163,9 @@ public class GUI extends JFrame {
 		for (int i = 0; i < gameBoard.getNumPlayers(); i++) {
 			playerMenus[i] = moveTypeSetup(i);
 			gameContainer.add(playerMenus[i]);
+			playerMenus[i].setLocation(PLAYER_MENU_LOCATIONS[i]);
 		}
 		
-		playerMenus[0].setLocation(50,100);
-		playerMenus[1].setLocation(675,100);
 		
 		newGameB = setupNewGameButton();
 		newGameB.setBounds(620, 400, 150, 25);
@@ -128,7 +173,9 @@ public class GUI extends JFrame {
 		
 		gameContainer.setLayout(null);
 		gameContainer.setBounds(mainPanel.getBounds());
+
 		mainPanel.add(gameContainer);
+		
 		
 		redrawTurn();
 		mainPanel.repaint();
@@ -171,6 +218,8 @@ public class GUI extends JFrame {
 		titlePane.add(sizeEntryComponentSetup());
 		
 		titlePane.setBounds(0, 0, 800, 50);
+		
+		titlePane.repaint();
 		
 		return titlePane;
 	}
@@ -252,22 +301,28 @@ public class GUI extends JFrame {
 	}
 
 	private void displayWinnerPanel() {
-		JPanel winnerPanel = winnerPanelSetup();
+		winnerPanel = winnerPanelSetup();
 		gameContainer.add(winnerPanel);
 		winnerPanel.setBounds(600, 350, 200, 50);
 	}
 	
+	public void afterMoveEvent() {
+		redrawTurn();
+
+		if (gameBoard.isGameOver() && winnerPanel == null) {
+			displayWinnerPanel();
+		}
+		
+		redrawBoard();
+	}
+	
 	public class boardClick extends MouseAdapter {
 		public void mouseClicked(MouseEvent e) {
-			int row = e.getY() / (BOARD_PIXEL_SIZE / gameBoard.getBoardSize());
-			int column = e.getX() / (BOARD_PIXEL_SIZE / gameBoard.getBoardSize());
-			
-			gameBoard.makeMove(row, column);
-			redrawBoard();
-			redrawTurn();
-			
-			if (gameBoard.isGameOver()) {
-				displayWinnerPanel();
+			if (!gameBoard.getPlayer(gameBoard.getTurn()).isComputer()) {
+				int row = e.getY() / (BOARD_PIXEL_SIZE / gameBoard.getBoardSize());
+				int column = e.getX() / (BOARD_PIXEL_SIZE / gameBoard.getBoardSize());
+
+				gameBoard.makeMove(row, column);
 			}
 		}
 	}
@@ -284,10 +339,14 @@ public class GUI extends JFrame {
 				else if (currentCell == Board.Cell.O) {
 					cellLabels[i][j].setText("O");
 				}
+				else {
+					cellLabels[i][j].setText("");
+				}
 			}
 		}
 		
 		boardPanel.repaint();
+		boardPanel.revalidate();
 		
 	}
 	
@@ -306,32 +365,73 @@ public class GUI extends JFrame {
 		}
 	}
 	
+	
 	private JPanel moveTypeSetup(int playerNum) {
 		JPanel panel = new JPanel();
-		panel.setSize(100,200);
+		panel.setSize(100,250);
 		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-		
-		String playerNumString = Integer.toString(playerNum);
-		
+				
 		JLabel section = new JLabel("Player " + gameBoard.getPlayer(playerNum).getName());
+		panel.add(section);		
+		
 		JRadioButton sChoice = new JRadioButton("S");
 		JRadioButton oChoice = new JRadioButton("O");
-		
+		JRadioButton humanChoice = new JRadioButton("Human");
+		JRadioButton computerChoice = new JRadioButton("Computer");
+		humanChoice.setSelected(true);
+
 		sChoice.setSelected(true);
 		
-		sChoice.setActionCommand(playerNumString + "S");
-		sChoice.addActionListener(new pieceChoiceAction());
+		sChoice.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				gameBoard.setPlayerPiece(playerNum, Player.Piece.S);				
+			}
+		});
 		
-		oChoice.setActionCommand(playerNumString + "O");
-		oChoice.addActionListener(new pieceChoiceAction());
+		oChoice.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				gameBoard.setPlayerPiece(playerNum, Player.Piece.O);				
+				
+			}
+		});
+		
+		humanChoice.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				Player currentPlayer = gameBoard.getPlayer(playerNum);
+				gameBoard.setPlayerComputerStatus(currentPlayer, false);
+				redrawBoard();
+				redrawTurn();
+				
+				Piece p = sChoice.isSelected() ? Piece.S : Piece.O; 
+				currentPlayer.setActivePiece(p);
+			}
+		});
+		
+		computerChoice.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				gameBoard.setPlayerComputerStatus(gameBoard.getPlayer(playerNum), true);
+				redrawBoard();
+				redrawTurn();
+			}
+		});
+		
+		ButtonGroup humanComputerGroup = new ButtonGroup();
+		humanComputerGroup.add(humanChoice);
+		humanComputerGroup.add(computerChoice);
 		
 		ButtonGroup group = new ButtonGroup();
 		group.add(sChoice);
 		group.add(oChoice);
 		
-		panel.add(section);
+		panel.add(humanChoice);
 		panel.add(sChoice);
-		panel.add(oChoice);
+		panel.add(oChoice);	
+		panel.add(Box.createVerticalStrut(10));
+		panel.add(computerChoice);
 		
 		return panel;
 	}
@@ -374,7 +474,7 @@ public class GUI extends JFrame {
 		}
 		
 	}
-	
+		
 	private JButton setupNewGameButton() {
 		JButton button = new JButton("New Game");
 		
@@ -391,7 +491,13 @@ public class GUI extends JFrame {
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			mainPanel.remove(gameContainer);
+			winnerPanel = null;
+			
+			gameBoard.terminateGame();
+			
 			initiateGame();
+
+			mainPanel.revalidate();
 			mainPanel.repaint();
 		}
 		
@@ -399,5 +505,6 @@ public class GUI extends JFrame {
 	
 	public static void main(String[] args) {
 		new GUI();
+
 	}
 }

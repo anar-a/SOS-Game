@@ -14,6 +14,8 @@ public class Player {
 	private int score = 0;
 	private String name = "Black";
 	
+	private boolean isComputer = false;
+	
 	public void setActivePiece(Piece piece) {
 		activePiece = piece;
 	}
@@ -44,5 +46,13 @@ public class Player {
 	
 	public void setName(String newName) {
 		name = newName;
+	}
+	
+	public void setComputerPlayer(boolean computerSetting) {
+		isComputer = computerSetting;
+	}
+	
+	public boolean isComputer() {
+		return isComputer;
 	}
 }
