@@ -1,8 +1,12 @@
 package Game;
 
 import java.awt.Color;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.ListIterator;
 import java.util.Random;
 
 import Game.Player.Piece;
@@ -32,6 +36,7 @@ public class Board {
 	
 	private Thread t1;
 	public int computerMoveDelay = 1000;
+	
 	
 	public enum GameMode {
 		SIMPLE,
@@ -200,7 +205,7 @@ public class Board {
 	}
 	
 	private int[][][] adjacentSOffsets = {
-			// format of adjacent cells to the middle one which would score
+			// format of adjacent cells to the middle one which enforces score condition
 			// Cell A: row offset, column offset; Cell B: row offset, column offset
 		{{0,-1}, {0,1}},
 		{{-1,0}, {1,0}},
@@ -405,8 +410,8 @@ public class Board {
 				}
 			}
 			
-			int k = rand.nextInt(0, 2);
-			getPlayer(turn).setActivePiece(k == 0 ? Piece.S : Piece.O);
+			Cell previous = getCell(latestCell.row, latestCell.column);
+			getPlayer(turn).setActivePiece(previous == Cell.S ? Piece.O : Piece.S);
 			
 			makeMove(latestCell.row + i, latestCell.column + j);
 			return true;
@@ -507,6 +512,10 @@ public class Board {
 		return scoredSPairs;
 	}
 	
+	public LinkedList<CellPoint> getMoveHistory(){
+		return moveHistory;
+	}
+	
 	public Player getPlayer(int playerNum) {
 		if (playerNum >= 0 && playerNum < NUM_PLAYERS) {
 			return players[playerNum];
@@ -560,5 +569,47 @@ public class Board {
 		
 		System.out.println();
 	}
+	
+	public void printMoveHistory() {
+		ListIterator<CellPoint> it = moveHistory.listIterator(moveHistory.size());
+		while (it.hasPrevious()) {
+			CellPoint p = it.previous();
+			System.out.print("Row: ");
+			System.out.print(p.row);
+			System.out.print(" Column: ");
+			System.out.println(p.column);
+		}
+	}
+	
+	public void makeHistoryFile() {
+		ListIterator<CellPoint> it = moveHistory.listIterator(moveHistory.size());	
+		
+		try {
+			File writeFile = new File("GameRecording.txt");
+			writeFile.createNewFile();
+			FileWriter fileWriter = new FileWriter(writeFile.getName());
+			int moveCount = 1;
+			
+			while (it.hasPrevious()) {
+				CellPoint p = it.previous();
+				fileWriter.write(Integer.toString(moveCount));
+				fileWriter.write(": ");
+				fileWriter.write("Row: ");
+				fileWriter.write(Integer.toString(p.row));
+				fileWriter.write(" Column: ");
+				fileWriter.write(Integer.toString(p.column));
+				fileWriter.write("\n");
+				moveCount++;
+			}
+			
+			fileWriter.close();
+			System.out.println("Game recording file successfully made.");
+			
+		} catch(IOException e) {
+			System.out.println("Error creating the move history file.");
+			e.printStackTrace();
+		}
+	}
+	
 	
 }

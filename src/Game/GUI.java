@@ -16,6 +16,7 @@ import java.awt.event.MouseEvent;
 import java.awt.geom.Line2D;
 import java.beans.PropertyChangeListener;
 import java.util.LinkedList;
+import java.util.ListIterator;
 
 import javax.print.attribute.IntegerSyntax;
 import javax.swing.Action;
@@ -25,6 +26,7 @@ import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.GroupLayout;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -36,12 +38,21 @@ import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingConstants;
 import javax.swing.event.ChangeListener;
 
+import Game.Board.Cell;
+import Game.Board.CellPoint;
 import Game.Board.GameMode;
 import Game.Board.SPair;
 import Game.Player.Piece;
 
 
 public class GUI extends JFrame {
+	private static final int BOARD_PIXEL_SIZE = 400;
+	private static final Dimension MAIN_PANEL_SIZE = new Dimension(800, 500);
+	private static final int GRID_GAP = 2;
+	private static final Point[] PLAYER_MENU_LOCATIONS = new Point[] {
+			new Point(50, 100),
+			new Point(650, 100)};
+	
 	private JPanel mainPanel;
 	
 	private JLabel gameTitle;
@@ -66,21 +77,14 @@ public class GUI extends JFrame {
 	private JPanel gameContainer;
 	private JPanel winnerPanel;
 	
-	
-	private static final int BOARD_PIXEL_SIZE = 400;
-	private static final Dimension MAIN_PANEL_SIZE = new Dimension(800, 500);
-	private static final int GRID_GAP = 2;
-	private static final Point[] PLAYER_MENU_LOCATIONS = new Point[] {
-			new Point(50, 100),
-			new Point(650, 100)};
+	private boolean isRecording;
+	private boolean replaying = false;
 	
 				
 	public GUI() {
 		mainPanel = new JPanel();
 		mainPanel.setLayout(null);
 		
-		//preGameContainer = preGameSetup();
-		//mainPanel.add(preGameContainer);
 		JPanel titlePanel = createTitleRow();
 		startButton = createStartButton();
 		
@@ -107,19 +111,6 @@ public class GUI extends JFrame {
 		
 		return preGameContainer;
 	}
-	
-//	public JPanel playerTypeSectionsSetup(int numPlayers) {
-//		playerTypeSections = new JPanel();
-//		playerTypeSections.setLayout(null);
-//		playerTypeSections.setSize(MAIN_PANEL_SIZE);
-//		
-//		for (int i = 0; i < numPlayers; i++) {
-//			JPanel playerPanel = playerTypeSetup(i);
-//			playerTypeSections.add(playerPanel);
-//		}
-//		
-//		return playerTypeSections;
-//	}
 	
 	public JButton createStartButton() {
 		JButton startButton = new JButton("Start Game");
@@ -174,10 +165,17 @@ public class GUI extends JFrame {
 		
 		gameContainer.setLayout(null);
 		gameContainer.setBounds(mainPanel.getBounds());
-
+		
+		JCheckBox recordB = recordButtonSetup();
+		recordB.setBounds(30, 400, 150, 25);
+		gameContainer.add(recordB);
+		
+		JButton replayB = replayButtonSetup();
+		replayB.setBounds(620, 430, 150, 25);
+		gameContainer.add(replayB);
+		
 		mainPanel.add(gameContainer);
-		
-		
+
 		redrawTurn();
 		mainPanel.repaint();
 	}
@@ -307,13 +305,18 @@ public class GUI extends JFrame {
 		winnerPanel.setBounds(600, 350, 200, 50);
 	}
 	
-	public void afterMoveEvent() {
-		redrawTurn();
-
+	private void checkWinCondition() {
 		if (gameBoard.isGameOver() && winnerPanel == null) {
 			displayWinnerPanel();
+			if (isRecording) {
+				gameBoard.makeHistoryFile();				
+			}
 		}
-		
+	}
+	
+	public void afterMoveEvent() {
+		redrawTurn();
+		checkWinCondition();
 		redrawBoard();
 	}
 	
@@ -348,7 +351,6 @@ public class GUI extends JFrame {
 		
 		boardPanel.repaint();
 		boardPanel.revalidate();
-		
 	}
 	
 	private void redrawTurn() {
@@ -454,27 +456,6 @@ public class GUI extends JFrame {
 		panel.add(winnerLabel);
 		return panel;
 	}
-	
-	private class pieceChoiceAction implements ActionListener{
-		@Override
-		public void actionPerformed(ActionEvent e) {
-			String actionCommand = e.getActionCommand();
-			int playerNum = Integer.parseInt(String.valueOf(actionCommand.charAt(0)));
-			char pieceChoiceChar = actionCommand.charAt(1);
-			
-			Player.Piece pieceChoice;
-			
-			if (pieceChoiceChar == 'S') {
-				pieceChoice = Player.Piece.S;
-			}
-			else {
-				pieceChoice = Player.Piece.O;
-			}
-			
-			gameBoard.setPlayerPiece(playerNum, pieceChoice);
-		}
-		
-	}
 		
 	private JButton setupNewGameButton() {
 		JButton button = new JButton("New Game");
@@ -487,25 +468,103 @@ public class GUI extends JFrame {
 		
 		return button;
 	}
-	
+
 	private class onNewGameAction implements ActionListener {
 		@Override
 		public void actionPerformed(ActionEvent e) {
-			mainPanel.remove(gameContainer);
-			winnerPanel = null;
-			
-			gameBoard.terminateGame();
-			
-			initiateGame();
+			if (!replaying) {
+				mainPanel.remove(gameContainer);
+				winnerPanel = null;
 
-			mainPanel.revalidate();
-			mainPanel.repaint();
+				gameBoard.terminateGame();
+
+				initiateGame();
+
+				mainPanel.revalidate();
+				mainPanel.repaint();
+			}
 		}
 		
 	}
 	
+	private JCheckBox recordButtonSetup() {
+		isRecording = false;
+		JCheckBox recordB = new JCheckBox("Record Game");
+		
+		recordB.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				isRecording = recordB.isSelected();
+			}
+		});
+		
+		return recordB;
+	}
+	
+	private void replayGame() {
+		if (gameBoard.isGameOver() && !replaying) {
+			replaying = true;
+			LinkedList<CellPoint> moveHistory = gameBoard.getMoveHistory();
+			
+			Board newBoard = new Board(gameBoard.getBoardSize(), gameBoard.getGameMode()) {
+				@Override
+				public void onMoveEvent() {
+					afterMoveEvent();
+				}
+			};
+			Board oldBoard = gameBoard;
+			gameBoard = newBoard;
+			
+			gameContainer.remove(winnerPanel);
+			winnerPanel = null;
+			
+			redrawBoard();
+			
+			mainPanel.revalidate();
+			mainPanel.repaint();
+			
+			ListIterator<CellPoint> it = moveHistory.listIterator(moveHistory.size());
+			
+			Thread t = new Thread(new Runnable() {
+				public void run() {
+					try {
+						while (it.hasPrevious()) {
+							Thread.sleep(500);
+							CellPoint p = it.previous();
+							
+							Piece moveMade = oldBoard.getCell(p.row, p.column) == Cell.S? Piece.S : Piece.O;
+							gameBoard.setPlayerPiece(gameBoard.getTurn(), moveMade);
+							gameBoard.makeMove(p.row, p.column);
+						}
+					} 
+					catch (Exception ex) {
+						ex.printStackTrace();
+					}
+					finally {
+						replaying = false;
+					}
+				}
+			
+			});
+			t.start();
+		}
+	}
+	
+	private JButton replayButtonSetup() {
+		JButton replayB = new JButton("Replay");
+		replayB.setFocusPainted(false);
+		replayB.setContentAreaFilled(false);
+		
+		replayB.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				replayGame();
+			}
+		});
+		
+		return replayB;
+	}
 	public static void main(String[] args) {
 		new GUI();
-
+		
 	}
 }
