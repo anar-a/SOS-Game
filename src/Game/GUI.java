@@ -50,8 +50,10 @@ public class GUI extends JFrame {
 	private static final Dimension MAIN_PANEL_SIZE = new Dimension(800, 500);
 	private static final int GRID_GAP = 2;
 	private static final Point[] PLAYER_MENU_LOCATIONS = new Point[] {
-			new Point(50, 100),
-			new Point(650, 100)};
+			new Point(50, 75),
+			new Point(650, 75),
+			new Point(50, 250),
+			new Point(650, 250)};
 	
 	private JPanel mainPanel;
 	
@@ -63,6 +65,7 @@ public class GUI extends JFrame {
 	
 	private JLabel boardSizeLabel;
 	private JSpinner boardSizeSpinner;
+	private JSpinner playerCountSpinner;
 
 	private JPanel boardPanel;
 	
@@ -97,7 +100,7 @@ public class GUI extends JFrame {
 	
 	}
 	
-	public JPanel preGameSetup() {
+	private JPanel preGameSetup() {
 		JPanel preGameContainer = new JPanel();
 		preGameContainer.setLayout(null);
 		
@@ -112,7 +115,7 @@ public class GUI extends JFrame {
 		return preGameContainer;
 	}
 	
-	public JButton createStartButton() {
+	private JButton createStartButton() {
 		JButton startButton = new JButton("Start Game");
 		startButton.setBounds(300, 200, 200, 50);
 		
@@ -128,6 +131,7 @@ public class GUI extends JFrame {
 	
 	private void initiateGame() {
 		int boardSize = (int) boardSizeSpinner.getValue();
+		int playerCount = (int) playerCountSpinner.getValue();
 		
 		GameMode selectedMode;
 		
@@ -139,7 +143,7 @@ public class GUI extends JFrame {
 		}
 		
 		
-		gameBoard = new Board(boardSize, selectedMode) {
+		gameBoard = new Board(boardSize, selectedMode, playerCount) { // values validated in board
 			@Override
 			public void onMoveEvent() {
 				afterMoveEvent();
@@ -167,7 +171,7 @@ public class GUI extends JFrame {
 		gameContainer.setBounds(mainPanel.getBounds());
 		
 		JCheckBox recordB = recordButtonSetup();
-		recordB.setBounds(30, 400, 150, 25);
+		recordB.setBounds(30, 430, 150, 25);
 		gameContainer.add(recordB);
 		
 		JButton replayB = replayButtonSetup();
@@ -196,7 +200,7 @@ public class GUI extends JFrame {
 		
 	}
 	
-	public JPanel createTitleRow() {
+	private JPanel createTitleRow() {
 		gameTitle = new JLabel("SOS Game");
 		simpleGame = new JRadioButton("Simple Game");
 		generalGame = new JRadioButton("General Game");
@@ -215,6 +219,7 @@ public class GUI extends JFrame {
 		titlePane.add(simpleGame);
 		titlePane.add(generalGame);
 		titlePane.add(sizeEntryComponentSetup());
+		titlePane.add(playerCountSpinnerSetup());
 		
 		titlePane.setBounds(0, 0, 800, 50);
 		
@@ -238,6 +243,24 @@ public class GUI extends JFrame {
 		pane.add(boardSizeLabel);
 		pane.add(boardSizeSpinner);
 		return pane;
+	}
+	
+	private JPanel playerCountSpinnerSetup() {
+		JPanel pane = new JPanel();
+		
+		JLabel spinnerLabel = new JLabel("Player Count");
+		
+		SpinnerModel values = new SpinnerNumberModel(2,
+				Board.MINIMUM_NUM_PLAYERS,
+				Board.MAXIMUM_NUM_PLAYERS,
+				1);
+		
+		playerCountSpinner = new JSpinner(values);
+		
+		pane.add(spinnerLabel);
+		pane.add(playerCountSpinner);
+		return pane;
+		
 	}
 	
 	private class BoardPanel extends JPanel{
@@ -302,7 +325,7 @@ public class GUI extends JFrame {
 	private void displayWinnerPanel() {
 		winnerPanel = winnerPanelSetup();
 		gameContainer.add(winnerPanel);
-		winnerPanel.setBounds(600, 350, 200, 50);
+		winnerPanel.setBounds(20, 400, 130, 25);
 	}
 	
 	private void checkWinCondition() {
@@ -314,13 +337,13 @@ public class GUI extends JFrame {
 		}
 	}
 	
-	public void afterMoveEvent() {
+	private void afterMoveEvent() {
 		redrawTurn();
 		checkWinCondition();
 		redrawBoard();
 	}
 	
-	public class boardClick extends MouseAdapter {
+	private class boardClick extends MouseAdapter {
 		public void mouseClicked(MouseEvent e) {
 			if (!gameBoard.getPlayer(gameBoard.getTurn()).isComputer()) {
 				int row = e.getY() / (BOARD_PIXEL_SIZE / gameBoard.getBoardSize());
@@ -331,7 +354,7 @@ public class GUI extends JFrame {
 		}
 	}
 	
-	public void redrawBoard() {
+	private void redrawBoard() {
 		int boardSize = gameBoard.getBoardSize();
 				
 		for (int i = 0; i < boardSize; i++) {
@@ -371,7 +394,7 @@ public class GUI extends JFrame {
 	
 	private JPanel moveTypeSetup(int playerNum) {
 		JPanel panel = new JPanel();
-		panel.setSize(100,250);
+		panel.setSize(100,125);
 		panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 				
 		JLabel section = new JLabel("Player " + gameBoard.getPlayer(playerNum).getName());
@@ -505,7 +528,7 @@ public class GUI extends JFrame {
 			replaying = true;
 			LinkedList<CellPoint> moveHistory = gameBoard.getMoveHistory();
 			
-			Board newBoard = new Board(gameBoard.getBoardSize(), gameBoard.getGameMode()) {
+			Board newBoard = new Board(gameBoard.getBoardSize(), gameBoard.getGameMode(), gameBoard.getNumPlayers()) {
 				@Override
 				public void onMoveEvent() {
 					afterMoveEvent();
@@ -517,6 +540,7 @@ public class GUI extends JFrame {
 			gameContainer.remove(winnerPanel);
 			winnerPanel = null;
 			
+			redrawTurn();
 			redrawBoard();
 			
 			mainPanel.revalidate();

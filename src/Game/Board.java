@@ -15,14 +15,17 @@ public class Board {
 	public static final int MINIMUM_BOARD_SIZE = 3;
 	public static final int MAXIMUM_BOARD_SIZE = 16;
 	
-	public static final int NUM_PLAYERS = 2;
+	public static final int MINIMUM_NUM_PLAYERS = 2;
+	public static final int MAXIMUM_NUM_PLAYERS = 4;
 	
+	private int numPlayers;
+
 	private int boardSize;
 	private Cell[][] boardCells;
 		
 	private GameMode currentGameMode;	
 	
-	private Player[] players = new Player[NUM_PLAYERS];
+	private Player[] players;
 	
 	private int turn = 0;
 	private boolean gameOver = false;
@@ -31,11 +34,14 @@ public class Board {
 	private LinkedList<SPair> scoredSPairs = new LinkedList<SPair>();
 	private LinkedList<CellPoint> moveHistory = new LinkedList<CellPoint>();
 	
-	private String[] playerNames = {"Blue", "Red"};
-	private Color[] playerColors = {new Color(50, 100, 255), new Color(255, 100, 50)};
+	private String[] playerNames = {"Blue", "Red", "Green", "Magenta"};
+	private Color[] playerColors = {new Color(50, 100, 255),
+			new Color(255, 100, 50),
+			new Color(100, 255, 50),
+			new Color(255, 0, 255)};
 	
 	private Thread t1;
-	public int computerMoveDelay = 1000;
+	private int computerMoveDelay = 1000;
 	
 	
 	public enum GameMode {
@@ -75,11 +81,19 @@ public class Board {
 	public class CellPoint {
 		public int row;
 		public int column;
+		public Player owner;
 		
 		CellPoint(int row, int column){
 			this.row = row;
 			this.column = column;
 		}
+		
+		CellPoint(int row, int column, Player owner){
+			this.row = row;
+			this.column = column;
+			this.owner = owner;
+		}
+		
 		
 		public boolean isEqual(CellPoint B) {
 			if (this.row == B.row && this.column == B.column) {
@@ -96,16 +110,30 @@ public class Board {
 	}
 	
 	
-	public Board(int boardSizeGiven, GameMode mode) {
+	public Board(int boardSizeGiven, GameMode mode, int playerCount) {
 		setBoardSize(boardSizeGiven);
 		setGameMode(mode);
 				
 		boardCells = new Cell[boardSize][boardSize]; // limit checked in setBoardSize()
 		setAllCellsEmpty();
-		populatePlayerArray();
 		
+		setNumPlayers(playerCount);
+		players = new Player[numPlayers];
+		populatePlayerArray();
 
 		
+	}
+	
+	private void setNumPlayers(int playerCount) {
+		if (playerCount > MAXIMUM_NUM_PLAYERS) {
+			numPlayers = MAXIMUM_NUM_PLAYERS;
+		}
+		else if (playerCount < MINIMUM_NUM_PLAYERS) {
+			numPlayers = MINIMUM_NUM_PLAYERS;
+		}
+		else {
+			numPlayers = playerCount;
+		}
 	}
 	
 	private void setGameMode(GameMode mode) {
@@ -139,7 +167,7 @@ public class Board {
 	}
 	
 	public boolean isPlayer(int playerNum) {
-		if (playerNum > 0 && playerNum < NUM_PLAYERS) {
+		if (playerNum > 0 && playerNum < numPlayers) {
 			return true;
 		}
 		else {
@@ -168,7 +196,7 @@ public class Board {
 	}
 	
 	private void populatePlayerArray() {
-		for (int i = 0; i < NUM_PLAYERS; i++) {
+		for (int i = 0; i < numPlayers; i++) {
 			Player p = new Player();
 			players[i] = p;
 			p.setName(playerNames[i]);
@@ -188,10 +216,7 @@ public class Board {
 	
 	
 	// need to store matching cells to draw lines
-	private boolean scoreMatchingCells(int cellARow, int cellAColumn, int cellBRow, int cellBColumn) {
-		CellPoint cellA = new CellPoint(cellARow, cellAColumn);
-		CellPoint cellB = new CellPoint(cellBRow, cellBColumn);
-		
+	private boolean scoreMatchingCells(CellPoint cellA, CellPoint cellB) {
 		if (!areAdjacentCellsScored(cellA, cellB)) {
 			Player scoringPlayer = players[turn];
 			SPair newPair = new SPair(cellA, cellB, scoringPlayer);
@@ -246,7 +271,7 @@ public class Board {
 				CellPoint b = new CellPoint(row + offsetB[0], column + offsetB[1]);
 
 				if (areTwoCellsSPieces(a, b)) {
-					scoreMatchingCells(a.row, a.column, b.row, b.column);
+					scoreMatchingCells(a, b);
 				}
 
 			}
@@ -287,7 +312,7 @@ public class Board {
 	}
 	
 	
-	
+		
 	public boolean makeMove(int row, int column) {
 		if ((row > boardSize - 1) || (row < 0) || (column > boardSize - 1) || (column < 0) || gameOver || t1 != null) {
 			return false;
@@ -302,14 +327,13 @@ public class Board {
 					boardCells[row][column] = Cell.O;
 				}
 				
-				moveHistory.addFirst(new CellPoint(row, column));
+				moveHistory.addFirst(new CellPoint(row, column, players[turn]));
 				
 				int prevNumScores = scoredSPairs.size();
 				
 				grantScoreCondition(row, column);
 				checkGameOver();				
 
-				
 				if (!(scoredSPairs.size() != prevNumScores && currentGameMode == GameMode.GENERAL)
 						&& (gameOver == false)) {
 					toggleTurn();
@@ -495,7 +519,7 @@ public class Board {
 	
 	private void toggleTurn() {
 		turn++;
-		if (turn >= NUM_PLAYERS) {
+		if (turn >= numPlayers) {
 			turn = 0;
 		}
 	}
@@ -517,7 +541,7 @@ public class Board {
 	}
 	
 	public Player getPlayer(int playerNum) {
-		if (playerNum >= 0 && playerNum < NUM_PLAYERS) {
+		if (playerNum >= 0 && playerNum < numPlayers) {
 			return players[playerNum];
 		}
 		else {
@@ -526,7 +550,7 @@ public class Board {
 	}
 	
 	public int getNumPlayers() {
-		return NUM_PLAYERS;
+		return numPlayers;
 	}
 	
 	public Player getWinner() {
@@ -570,6 +594,28 @@ public class Board {
 		System.out.println();
 	}
 	
+	public String getBoardString() {
+		String s = "";
+		for (int i = 0; i < boardSize; i++) {
+			for (int j = 0; j < boardSize; j++) {
+				if (boardCells[i][j] == Cell.S) {
+					s += "S";
+				}
+				else if (boardCells[i][j] == Cell.O) {
+					s += "O";
+				}
+				else {
+					s += "_";
+				}
+				s +=" ";
+			}
+			s += "\n";
+		}
+		
+		s += "\n";
+		return s;
+	}
+	
 	public void printMoveHistory() {
 		ListIterator<CellPoint> it = moveHistory.listIterator(moveHistory.size());
 		while (it.hasPrevious()) {
@@ -594,13 +640,17 @@ public class Board {
 				CellPoint p = it.previous();
 				fileWriter.write(Integer.toString(moveCount));
 				fileWriter.write(": ");
-				fileWriter.write("Row: ");
-				fileWriter.write(Integer.toString(p.row));
+				fileWriter.write("Player ");
+				fileWriter.write(p.owner.getName());
+				fileWriter.write(" - Row: ");
+				fileWriter.write(Integer.toString(p.row + 1));
 				fileWriter.write(" Column: ");
-				fileWriter.write(Integer.toString(p.column));
+				fileWriter.write(Integer.toString(p.column + 1));
 				fileWriter.write("\n");
 				moveCount++;
 			}
+			
+			fileWriter.write(getBoardString());
 			
 			fileWriter.close();
 			System.out.println("Game recording file successfully made.");

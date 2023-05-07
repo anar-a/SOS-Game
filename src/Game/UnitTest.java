@@ -12,37 +12,37 @@ class UnitTest {
 
 	@Test
 	public void testBoardSizeSetup() {
-		Board board = new Board(validBoardSize, Board.GameMode.SIMPLE);
+		Board board = new Board(validBoardSize, Board.GameMode.SIMPLE, 2);
 		assertEquals(validBoardSize, board.getBoardSize());
 	}
 	
 	@Test
 	public void testMinBoardSize() {
-		Board board = new Board(Board.MINIMUM_BOARD_SIZE - 1, Board.GameMode.SIMPLE);
+		Board board = new Board(Board.MINIMUM_BOARD_SIZE - 1, Board.GameMode.SIMPLE, 2);
 		assertEquals(Board.MINIMUM_BOARD_SIZE, board.getBoardSize());
 		
-		board = new Board(Board.MINIMUM_BOARD_SIZE - 1, Board.GameMode.GENERAL);
+		board = new Board(Board.MINIMUM_BOARD_SIZE - 1, Board.GameMode.GENERAL, 2);
 		assertEquals(Board.MINIMUM_BOARD_SIZE, board.getBoardSize());
 	}
 	
 	@Test
 	public void testMaxBoardSize() {
-		Board board = new Board(Board.MAXIMUM_BOARD_SIZE + 1, Board.GameMode.SIMPLE);
+		Board board = new Board(Board.MAXIMUM_BOARD_SIZE + 1, Board.GameMode.SIMPLE, 2);
 		assertEquals(Board.MAXIMUM_BOARD_SIZE, board.getBoardSize());
 		
-		board = new Board(Board.MAXIMUM_BOARD_SIZE + 1, Board.GameMode.GENERAL);
+		board = new Board(Board.MAXIMUM_BOARD_SIZE + 1, Board.GameMode.GENERAL, 2);
 		assertEquals(Board.MAXIMUM_BOARD_SIZE, board.getBoardSize());
 	}
 	
 	@Test
 	public void testSelectSimpleGame() {
-		Board board = new Board(0, Board.GameMode.SIMPLE) ;
+		Board board = new Board(0, Board.GameMode.SIMPLE, 2) ;
 		assertEquals(Board.GameMode.SIMPLE, board.getGameMode());
 	}
 	
 	@Test
 	public void testSelectGeneralGame() {
-		Board board = new Board(0, Board.GameMode.GENERAL);
+		Board board = new Board(0, Board.GameMode.GENERAL, 2);
 		assertEquals(Board.GameMode.GENERAL, board.getGameMode());
 	}
 
@@ -50,7 +50,7 @@ class UnitTest {
 	@Test
 	public void testSelectSimpleGameNSize() {		
 		for (int i = Board.MINIMUM_BOARD_SIZE; i <= Board.MAXIMUM_BOARD_SIZE; i++) {
-			Board board = new Board(i, Board.GameMode.SIMPLE);
+			Board board = new Board(i, Board.GameMode.SIMPLE, 2);
 			assertEquals(i, board.getBoardSize());
 			assertEquals(Board.GameMode.SIMPLE, board.getGameMode());
 			
@@ -61,7 +61,7 @@ class UnitTest {
 	@Test
 	public void testSelectGeneralGameNSize() {
 		for (int i = Board.MINIMUM_BOARD_SIZE; i <= Board.MAXIMUM_BOARD_SIZE; i++) {
-			Board board = new Board(i, Board.GameMode.GENERAL);
+			Board board = new Board(i, Board.GameMode.GENERAL, 2);
 			assertEquals(i, board.getBoardSize());
 			assertEquals(Board.GameMode.GENERAL, board.getGameMode());
 		}	
@@ -69,19 +69,19 @@ class UnitTest {
 	
 	@Test
 	public void testValidSimpleGameMove() {
-		Board board = new Board(validBoardSize, Board.GameMode.SIMPLE);
+		Board board = new Board(validBoardSize, Board.GameMode.SIMPLE, 2);
 		assertEquals(true, board.makeMove(0, 0));
 	}
 	
 	@Test
 	public void testOutOfBoundsSimpleGameMove() {
-		Board board = new Board(validBoardSize, Board.GameMode.SIMPLE);
+		Board board = new Board(validBoardSize, Board.GameMode.SIMPLE, 2);
 		assertEquals(false, board.makeMove(Board.MAXIMUM_BOARD_SIZE + 1, 0));
 	}
 	
 	@Test
 	public void testSimpleGameOccupiedMove() {
-		Board board = new Board(validBoardSize, Board.GameMode.SIMPLE);
+		Board board = new Board(validBoardSize, Board.GameMode.SIMPLE, 2);
 		
 		board.makeMove(0, 0);
 		assertEquals(false, board.makeMove(0, 0));
@@ -89,7 +89,7 @@ class UnitTest {
 	
 	@Test
 	public void testSimpleGameTurnToggle() {
-		Board board = new Board(validBoardSize, Board.GameMode.SIMPLE);
+		Board board = new Board(validBoardSize, Board.GameMode.SIMPLE, 2);
 		
 		int prevTurn = board.getTurn();
 		board.makeMove(0,0);
@@ -100,19 +100,19 @@ class UnitTest {
 	
 	@Test
 	public void testValidGeneralGameMove() {
-		Board board = new Board(validBoardSize, Board.GameMode.GENERAL);
+		Board board = new Board(validBoardSize, Board.GameMode.GENERAL, 2);
 		assertEquals(true, board.makeMove(0, 0));
 	}
 	
 	@Test
 	public void testOutOfBoundsGeneralGameMove() {
-		Board board = new Board(validBoardSize, Board.GameMode.GENERAL);
+		Board board = new Board(validBoardSize, Board.GameMode.GENERAL, 2);
 		assertEquals(false, board.makeMove(Board.MAXIMUM_BOARD_SIZE + 1, 0));
 	}
 	
 	@Test
 	public void testGeneralGameOccupiedMove() {
-		Board board = new Board(validBoardSize, Board.GameMode.GENERAL);
+		Board board = new Board(validBoardSize, Board.GameMode.GENERAL, 2);
 		
 		board.makeMove(0, 0);
 		assertEquals(false, board.makeMove(0, 0));
@@ -120,7 +120,7 @@ class UnitTest {
 	
 	@Test
 	public void testGeneralGameTurnToggle() {
-		Board board = new Board(validBoardSize, Board.GameMode.GENERAL);
+		Board board = new Board(validBoardSize, Board.GameMode.GENERAL, 2);
 		
 		int prevTurn = board.getTurn();
 		board.makeMove(0,0);
@@ -130,7 +130,7 @@ class UnitTest {
 	
 	@Test
 	public void testGeneralGameDoubleTurn() {
-		Board board = new Board(validBoardSize, Board.GameMode.GENERAL);
+		Board board = new Board(validBoardSize, Board.GameMode.GENERAL, 2);
 	
 		board.makeMove(0, 0);
 		
@@ -145,7 +145,7 @@ class UnitTest {
 	
 	@Test
 	public void testSimpleGameOverWin() {
-		Board board = new Board(3, Board.GameMode.SIMPLE);
+		Board board = new Board(3, Board.GameMode.SIMPLE, 2);
 		board.makeMove(0, 0);
 		
 		board.getPlayer(1).setActivePiece(Piece.O);
@@ -159,7 +159,7 @@ class UnitTest {
 	
 	@Test
 	public void testSimpleGameOverDraw() {
-		Board board = new Board(3, Board.GameMode.SIMPLE);
+		Board board = new Board(3, Board.GameMode.SIMPLE, 2);
 		for (int i = 0; i < board.getBoardSize(); i++) {
 			for (int j = 0; j < board.getBoardSize(); j++) {
 				board.makeMove(i, j);
@@ -172,7 +172,7 @@ class UnitTest {
 	
 	@Test
 	public void testGeneralGameOverWin() {
-		Board board = new Board(3, Board.GameMode.GENERAL);
+		Board board = new Board(3, Board.GameMode.GENERAL, 2);
 		
 		board.makeMove(0, 0);
 		
@@ -199,7 +199,7 @@ class UnitTest {
 	
 	@Test
 	public void testGeneralGameOverDraw() {
-		Board board = new Board(3, Board.GameMode.GENERAL);
+		Board board = new Board(3, Board.GameMode.GENERAL, 2);
 		
 		for (int i = 0; i < board.getBoardSize(); i++) {
 			for (int j = 0; j < board.getBoardSize(); j++) {
@@ -214,7 +214,7 @@ class UnitTest {
 	
 	@Test
 	public void testComputerMoveStart() {
-		Board board = new Board(validBoardSize, Board.GameMode.GENERAL);
+		Board board = new Board(validBoardSize, Board.GameMode.GENERAL, 2);
 		
 		boolean oneCellOccupied = false;
 		board.setPlayerComputerStatus(board.getPlayer(0), true);
@@ -232,7 +232,7 @@ class UnitTest {
 	
 	@Test
 	public void testComputerMoveResponse() {
-		Board board = new Board(validBoardSize, Board.GameMode.GENERAL);
+		Board board = new Board(validBoardSize, Board.GameMode.GENERAL, 2);
 		
 		board.makeMove(0, 0);
 		board.setPlayerComputerStatus(board.getPlayer(1), true);
@@ -251,7 +251,7 @@ class UnitTest {
 	
 	@Test
 	public void testAllComputerPlayersValidGame() {		
-		Board board = new Board(validBoardSize, Board.GameMode.GENERAL) {
+		Board board = new Board(validBoardSize, Board.GameMode.GENERAL, 2) {
 			private int occupiedCells = 0;
 			
 			@Override
@@ -272,7 +272,7 @@ class UnitTest {
 	
 	@Test
 	public void testSwitchPlayerType() {
-		Board board = new Board(validBoardSize, Board.GameMode.SIMPLE);
+		Board board = new Board(validBoardSize, Board.GameMode.SIMPLE, 2);
 		
 		assertEquals(false, board.getPlayer(0).isComputer());
 		assertEquals(false, board.getPlayer(1).isComputer());

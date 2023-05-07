@@ -1,0 +1,31 @@
+1: Player Blue - Row: 2 Column: 5
+2: Player Red - Row: 2 Column: 4
+3: Player Blue - Row: 3 Column: 3
+4: Player Red - Row: 4 Column: 3
+5: Player Blue - Row: 3 Column: 2
+6: Player Red - Row: 4 Column: 1
+7: Player Blue - Row: 5 Column: 1
+8: Player Red - Row: 4 Column: 2
+9: Player Red - Row: 3 Column: 1
+10: Player Red - Row: 2 Column: 1
+11: Player Blue - Row: 1 Column: 1
+12: Player Blue - Row: 2 Column: 2
+13: Player Blue - Row: 2 Column: 3
+14: Player Blue - Row: 3 Column: 4
+15: Player Red - Row: 4 Column: 5
+16: Player Red - Row: 3 Column: 5
+17: Player Red - Row: 4 Column: 4
+18: Player Blue - Row: 5 Column: 5
+19: Player Red - Row: 5 Column: 4
+20: Player Red - Row: 5 Column: 3
+21: Player Blue - Row: 5 Column: 2
+22: Player Blue - Row: 1 Column: 2
+23: Player Red - Row: 1 Column: 3
+24: Player Red - Row: 1 Column: 4
+25: Player Blue - Row: 1 Column: 5
+S O S O S 
+O O S O S 
+S S S O O 
+O O O S S 
+S S O S O 
+
